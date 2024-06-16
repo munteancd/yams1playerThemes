@@ -7,17 +7,38 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
-        .theme-selector-container {
-            width: 100%;
+        .table-and-info-container {
             display: flex;
             justify-content: center;
-            margin-top: 10px;
+            align-items: flex-start;
+            margin-top: 20px;
+        }
+        .table-container {
+            flex: 1;
+        }
+        .info-container {
+            display: flex;
+            flex-direction: column;
+            margin-left: 20px;
+        }
+        .info-container button,
+        .info-container input,
+        .info-container label,
+        .info-container select {
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .theme-selector-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
         }
         .theme-selector-container label {
-            margin-right: 10px;
+            margin-bottom: 5px;
         }
         .theme-selector-container select {
-            width: 15%;
+            width: 100%;
         }
     </style>
     <script>
@@ -487,42 +508,42 @@
                 <button type="button" onclick="saveGame()">Save Game</button>
                 <button type="button" onclick="loadGame()">Load Game</button>
                 <button type="button" class="reset-button" onclick="resetScores()">Reset Scores</button>
+                <div class="theme-selector-container">
+                    <label for="theme-selector">Select Theme:</label>
+                    <select id="theme-selector" onchange="changeTheme()">
+                        <option value="default">Default</option>
+                        <option value="dark">Dark</option>
+                        <option value="pastel">Pastel</option>
+                        <option value="high-contrast">High Contrast</option>
+                        <option value="ocean">Ocean</option>
+                        <option value="forest">Forest</option>
+                        <option value="sunset">Sunset</option>
+                        <option value="desert">Desert</option>
+                        <option value="winter">Winter</option>
+                        <option value="spring">Spring</option>
+                        <option value="summer">Summer</option>
+                        <option value="autumn">Autumn</option>
+                        <option value="vintage">Vintage</option>
+                        <option value="modern">Modern</option>
+                        <option value="neon">Neon</option>
+                        <option value="classic">Classic</option>
+                        <option value="space">Space</option>
+                        <option value="earth">Earth</option>
+                        <option value="floral">Floral</option>
+                        <option value="monochrome">Monochrome</option>
+                        <option value="sunrise">Sunrise</option>
+                        <option value="twilight">Twilight</option>
+                        <option value="dusk">Dusk</option>
+                        <option value="aurora">Aurora</option>
+                        <option value="peach">Peach</option>
+                        <option value="emerald">Emerald</option>
+                        <option value="midnight">Midnight</option>
+                        <option value="lavender">Lavender</option>
+                        <option value="sunburst">Sunburst</option>
+                        <option value="bubblegum">Bubblegum</option>
+                    </select>
+                </div>
             </div>
-        </div>
-        <div class="theme-selector-container">
-            <label for="theme-selector">Select Theme:</label>
-            <select id="theme-selector" onchange="changeTheme()">
-                <option value="default">Default</option>
-                <option value="dark">Dark</option>
-                <option value="pastel">Pastel</option>
-                <option value="high-contrast">High Contrast</option>
-                <option value="ocean">Ocean</option>
-                <option value="forest">Forest</option>
-                <option value="sunset">Sunset</option>
-                <option value="desert">Desert</option>
-                <option value="winter">Winter</option>
-                <option value="spring">Spring</option>
-                <option value="summer">Summer</option>
-                <option value="autumn">Autumn</option>
-                <option value="vintage">Vintage</option>
-                <option value="modern">Modern</option>
-                <option value="neon">Neon</option>
-                <option value="classic">Classic</option>
-                <option value="space">Space</option>
-                <option value="earth">Earth</option>
-                <option value="floral">Floral</option>
-                <option value="monochrome">Monochrome</option>
-                <option value="sunrise">Sunrise</option>
-                <option value="twilight">Twilight</option>
-                <option value="dusk">Dusk</option>
-                <option value="aurora">Aurora</option>
-                <option value="peach">Peach</option>
-                <option value="emerald">Emerald</option>
-                <option value="midnight">Midnight</option>
-                <option value="lavender">Lavender</option>
-                <option value="sunburst">Sunburst</option>
-                <option value="bubblegum">Bubblegum</option>
-            </select>
         </div>
     </form>
 </body>
