@@ -1,0 +1,108 @@
+:root {
+    --background-color: #f0f0f0;
+    --text-color: #000000;
+    --primary-color: #4CAF50;
+    --secondary-color: #45a049;
+    --font-family: Arial, sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+h1 {
+    text-align: center;
+    margin-top: 20px;
+}
+
+form {
+    width: 80%; /* Ensure form width is responsive */
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.table-and-info-container {
+    display: flex;
+    align-items: flex-start; /* Align items to the top */
+    justify-content: center; /* Center the content horizontally */
+    margin-top: 20px; /* Add some space above the container */
+}
+
+.table-container {
+    flex: 1;
+}
+
+table {
+    width: 100%;
+    margin: 20px 0;
+    border-collapse: collapse;
+    table-layout: fixed; /* Ensure table layout is fixed */
+    text-align: center;
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 0px; /* Reduce padding to make cells smaller */
+    height: 1em; /* Set a fixed height for the cells */
+    overflow: hidden; /* Ensure content does not overflow */
+}
+
+th {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+select {
+    width: 100%;
+    padding: 5px;
+    text-align: center;
+    box-sizing: border-box; /* Include padding in width calculation */
+    font-family: var(--font-family); /* Ensure select elements use the same font */
+    font-size: 1em; /* Set the font size to match non-editable cells */
+}
+
+span {
+    color: blue; /* Make non-editable cell text blue */
+}
+
+button {
+    padding: 10px 20px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: var(--secondary-color);
+}
+
+a {
+    display: block;
+    width: 80px;
+    margin: 20px auto;
+    text-align: center;
+    padding: 10px;
+    background-color: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+
+a:hover {
+    background-color: var(--secondary-color);
+}
+
+body.dark-mode {
+    --background-color: #121212;
+    --text-color: #ffffff;
+    --primary-color: #333333;
+    --secondary-color: #666666;
+}

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Yams Game Scoreboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.9/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        .theme-selector-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .theme-selector-container label {
+            margin-right: 10px;
+        }
+        .theme-selector-container select {
+            width: 15%;
+        }
+    </style>
+    <script>
+        function safeInt(value) {
+            return isNaN(parseInt(value)) ? 0 : parseInt(value);
+        }
+
+        function updateTB() {
+            for (let col = 0; col < 4; col++) {
+                let sum = 0;
+                for (let row = 0; row < 6; row++) {
+                    let cellValue = document.querySelector(`select[name="entry_${row}_${col}"]`).value;
+                    sum += safeInt(cellValue);
+                }
+                if (sum >= 60) {
+                    sum += (col != 3) ? 30 : 60;
+                }
+                document.getElementById(`tb_${col}`).innerText = sum;
+            }
+            updateTC();
+        }
+
+        function updateTM() {
+            for (let col = 0; col < 4; col++) {
+                let mi = safeInt(document.querySelector(`select[name="entry_7_${col}"]`).value);
+                let ma = safeInt(document.querySelector(`select[name="entry_8_${col}"]`).value);
+                let tm = ma - mi;
+                document.getElementById(`tm_${col}`).innerText = tm;
+            }
+            updateTC();
+        }
+
+        function updateTC() {
+            for (let col = 0; col < 4; col++) {
+                let tb = safeInt(document.getElementById(`tb_${col}`).innerText);
+                let tm = safeInt(document.getElementById(`tm_${col}`).innerText);
+                let sum = tb + tm;
+                const rowsToSum = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
+                rowsToSum.forEach(row => {
+                    sum += safeInt(document.querySelector(`select[name="entry_${row}_${col}"]`).value);
+                });
+                document.getElementById(`tc_${col}`).innerText = sum;
+            }
+            updateTO();
+        }
+
+        function updateTO() {
+            let total = 0;
+            for (let col = 0; col < 4; col++) {
+                total += safeInt(document.getElementById('tc_' + col).innerText);
+            }
+            document.getElementById('to').innerText = total;
+        }
+
+        function updateEmptyCells() {
+            let emptyCells = 0;
+            document.querySelectorAll('select').forEach(select => {
+                if (select.value === "") {
+                    emptyCells++;
+                }
+            });
+            document.getElementById('empty-cells-count').innerText = emptyCells;
+        }
+
+        function resetScores() {
+            if (confirm('Are you sure you want to reset all scores?')) {
+                document.querySelectorAll('select').forEach(select => {
+                    select.selectedIndex = 0; // Reset dropdowns to default value
+                });
+                document.querySelectorAll('span').forEach(span => {
+                    span.innerText = ''; // Clear the calculated scores
+                });
+                updateTB();
+                updateTM();
+                updateTC();
+                updateEmptyCells();
+                updateCellColors();
+            }
+        }
+
+        function saveGame() {
+            let table = document.querySelector('table');
+            let data = [];
+            table.querySelectorAll('tr').forEach((row, rowIndex) => {
+                let rowData = [];
+                row.querySelectorAll('td, th').forEach((cell, colIndex) => {
+                    if (rowIndex === 0) {
+                        rowData.push(cell.innerText);
+                    } else {
+                        if (cell.querySelector('select')) {
+                            rowData.push(cell.querySelector('select').value || '');
+                        } else if (cell.querySelector('span')) {
+                            rowData.push(cell.querySelector('span').innerText || '');
+                        } else {
+                            rowData.push(cell.innerText);
+                        }
+                    }
+                });
+                data.push(rowData);
+            });
+
+            let wb = XLSX.utils.book_new();
+            let ws = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            let wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'binary' });
+
+            function s2ab(s) {
+                let buf = new ArrayBuffer(s.length);
+                let view = new Uint8Array(buf);
+                for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+                return buf;
+            }
+
+            let fileName = document.getElementById('fileName').value || 'game_scores.xlsx';
+            saveAs(new Blob([s2ab(wbout)], { type: "application/octet-stream" }), fileName);
+        }
+
+        function loadGame() {
+            let input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.xlsx,.xls';
+            input.onchange = async (e) => {
+                let file = e.target.files[0];
+                let reader = new FileReader();
+                reader.onload = async (event) => {
+                    let data = new Uint8Array(event.target.result);
+                    let workbook = XLSX.read(data, {type: 'array'});
+                    let sheetName = workbook.SheetNames[0];
+                    let worksheet = workbook.Sheets[sheetName];
+                    let json = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+                    populateTable(json);
+                };
+                reader.readAsArrayBuffer(file);
+            };
+            input.click();
+        }
+
+        function populateTable(data) {
+            for (let row = 0; row < 21; row++) {
+                for (let col = 0; col < 4; col++) {
+                    let cellValue = data[row + 1] ? data[row + 1][col + 1] : '';
+                    let select = document.querySelector(`select[name="entry_${row}_${col}"]`);
+                    if (select) {
+                        select.value = cellValue;
+                    }
+                }
+            }
+            updateTB();
+            updateTM();
+            updateTC();
+            updateEmptyCells();
+            updateCellColors();
+        }
+
+        function updateCellColors() {
+            document.querySelectorAll('select').forEach(select => {
+                if (select.value === '0') {
+                    select.style.color = 'red';
+                } else {
+                    select.style.color = '';
+                }
+            });
+            const yRowSelects = document.querySelectorAll('select[name^="entry_19"]');
+            yRowSelects.forEach(select => {
+                if (select.value !== '0') {
+                    select.style.color = 'green';
+                    select.style.fontWeight = 'bold';
+                } else {
+                    select.style.color = '';
+                    select.style.fontWeight = '';
+                }
+            });
+        }
+
+        function changeTheme() {
+            const theme = document.getElementById('theme-selector').value;
+            localStorage.setItem('selectedTheme', theme);
+            switch (theme) {
+                case 'dark':
+                    document.documentElement.style.setProperty('--background-color', '#121212');
+                    document.documentElement.style.setProperty('--text-color', '#ffffff');
+                    document.documentElement.style.setProperty('--primary-color', '#333333');
+                    document.documentElement.style.setProperty('--secondary-color', '#666666');
+                    break;
+                case 'pastel':
+                    document.documentElement.style.setProperty('--background-color', '#f3e5f5');
+                    document.documentElement.style.setProperty('--text-color', '#6a1b9a');
+                    document.documentElement.style.setProperty('--primary-color', '#ba68c8');
+                    document.documentElement.style.setProperty('--secondary-color', '#ab47bc');
+                    break;
+                case 'high-contrast':
+                    document.documentElement.style.setProperty('--background-color', '#ffffff');
+                    document.documentElement.style.setProperty('--text-color', '#000000');
+                    document.documentElement.style.setProperty('--primary-color', '#ff0000');
+                    document.documentElement.style.setProperty('--secondary-color', '#0000ff');
+                    break;
+                case 'ocean':
+                    document.documentElement.style.setProperty('--background-color', '#e0f7fa');
+                    document.documentElement.style.setProperty('--text-color', '#006064');
+                    document.documentElement.style.setProperty('--primary-color', '#00bcd4');
+                    document.documentElement.style.setProperty('--secondary-color', '#0097a7');
+                    break;
+                case 'forest':
+                    document.documentElement.style.setProperty('--background-color', '#e8f5e9');
+                    document.documentElement.style.setProperty('--text-color', '#1b5e20');
+                    document.documentElement.style.setProperty('--primary-color', '#4caf50');
+                    document.documentElement.style.setProperty('--secondary-color', '#388e3c');
+                    break;
+                case 'sunset':
+                    document.documentElement.style.setProperty('--background-color', '#fff3e0');
+                    document.documentElement.style.setProperty('--text-color', '#bf360c');
+                    document.documentElement.style.setProperty('--primary-color', '#ff5722');
+                    document.documentElement.style.setProperty('--secondary-color', '#e64a19');
+                    break;
+                case 'desert':
+                    document.documentElement.style.setProperty('--background-color', '#fff8e1');
+                    document.documentElement.style.setProperty('--text-color', '#ff6f00');
+                    document.documentElement.style.setProperty('--primary-color', '#ff9800');
+                    document.documentElement.style.setProperty('--secondary-color', '#f57c00');
+                    break;
+                case 'winter':
+                    document.documentElement.style.setProperty('--background-color', '#e1f5fe');
+                    document.documentElement.style.setProperty('--text-color', '#01579b');
+                    document.documentElement.style.setProperty('--primary-color', '#03a9f4');
+                    document.documentElement.style.setProperty('--secondary-color', '#0288d1');
+                    break;
+                case 'spring':
+                    document.documentElement.style.setProperty('--background-color', '#f1f8e9');
+                    document.documentElement.style.setProperty('--text-color', '#33691e');
+                    document.documentElement.style.setProperty('--primary-color', '#8bc34a');
+                    document.documentElement.style.setProperty('--secondary-color', '#689f38');
+                    break;
+                case 'summer':
+                    document.documentElement.style.setProperty('--background-color', '#fffde7');
+                    document.documentElement.style.setProperty('--text-color', '#fbc02d');
+                    document.documentElement.style.setProperty('--primary-color', '#ffeb3b');
+                    document.documentElement.style.setProperty('--secondary-color', '#fbc02d');
+                    break;
+                case 'autumn':
+                    document.documentElement.style.setProperty('--background-color', '#fbe9e7');
+                    document.documentElement.style.setProperty('--text-color', '#d84315');
+                    document.documentElement.style.setProperty('--primary-color', '#ff7043');
+                    document.documentElement.style.setProperty('--secondary-color', '#d84315');
+                    break;
+                case 'vintage':
+                    document.documentElement.style.setProperty('--background-color', '#f5f5dc');
+                    document.documentElement.style.setProperty('--text-color', '#6b4226');
+                    document.documentElement.style.setProperty('--primary-color', '#d2b48c');
+                    document.documentElement.style.setProperty('--secondary-color', '#a0522d');
+                    break;
+                case 'modern':
+                    document.documentElement.style.setProperty('--background-color', '#eceff1');
+                    document.documentElement.style.setProperty('--text-color', '#263238');
+                    document.documentElement.style.setProperty('--primary-color', '#607d8b');
+                    document.documentElement.style.setProperty('--secondary-color', '#455a64');
+                    break;
+                case 'neon':
+                    document.documentElement.style.setProperty('--background-color', '#212121');
+                    document.documentElement.style.setProperty('--text-color', '#ff4081');
+                    document.documentElement.style.setProperty('--primary-color', '#e040fb');
+                    document.documentElement.style.setProperty('--secondary-color', '#7c4dff');
+                    break;
+                case 'classic':
+                    document.documentElement.style.setProperty('--background-color', '#fafafa');
+                    document.documentElement.style.setProperty('--text-color', '#212121');
+                    document.documentElement.style.setProperty('--primary-color', '#ff5252');
+                    document.documentElement.style.setProperty('--secondary-color', '#ff4081');
+                    break;
+                case 'space':
+                    document.documentElement.style.setProperty('--background-color', '#000000');
+                    document.documentElement.style.setProperty('--text-color', '#ffffff');
+                    document.documentElement.style.setProperty('--primary-color', '#3f51b5');
+                    document.documentElement.style.setProperty('--secondary-color', '#9c27b0');
+                    break;
+                case 'earth':
+                    document.documentElement.style.setProperty('--background-color', '#efebe9');
+                    document.documentElement.style.setProperty('--text-color', '#5d4037');
+                    document.documentElement.style.setProperty('--primary-color', '#795548');
+                    document.documentElement.style.setProperty('--secondary-color', '#3e2723');
+                    break;
+                case 'floral':
+                    document.documentElement.style.setProperty('--background-color', '#fce4ec');
+                    document.documentElement.style.setProperty('--text-color', '#880e4f');
+                    document.documentElement.style.setProperty('--primary-color', '#ec407a');
+                    document.documentElement.style.setProperty('--secondary-color', '#d81b60');
+                    break;
+                case 'monochrome':
+                    document.documentElement.style.setProperty('--background-color', '#ffffff');
+                    document.documentElement.style.setProperty('--text-color', '#000000');
+                    document.documentElement.style.setProperty('--primary-color', '#9e9e9e');
+                    document.documentElement.style.setProperty('--secondary-color', '#757575');
+                    break;
+                default:
+                    document.documentElement.style.setProperty('--background-color', '#f0f0f0');
+                    document.documentElement.style.setProperty('--text-color', '#000000');
+                    document.documentElement.style.setProperty('--primary-color', '#4CAF50');
+                    document.documentElement.style.setProperty('--secondary-color', '#45a049');
+                    break;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const savedTheme = localStorage.getItem('selectedTheme') || 'default';
+            document.getElementById('theme-selector').value = savedTheme;
+            changeTheme();
+            
+            document.querySelectorAll('select').forEach((select) => {
+                select.addEventListener('change', () => {
+                    if (select.value === "delete") {
+                        select.value = "";
+                    }
+                    updateTB();
+                    updateTM();
+                    updateTC();
+                    updateEmptyCells();
+                    updateCellColors();
+                });
+            });
+            updateTB(); // Initial calculation
+            updateTM(); // Initial calculation
+            updateTC(); // Initial calculation
+            updateEmptyCells(); // Initial empty cells calculation
+            updateCellColors(); // Initial cell color update
+        });
+    </script>
+</head>
+<body>
+    <form>
+        <div class="table-and-info-container">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Row Name</th>
+                            <th>Jos</th>
+                            <th>Liber</th>
+                            <th>Sus</th>
+                            <th>Servit</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in range(21) %}
+                            <tr>
+                                <td>{{ row_names[row] }}</td>
+                                {% for col in range(4) %}
+                                    <td>
+                                        {% if row == 6 %}
+                                            <span id="tb_{{ col }}"></span>
+                                        {% elif row == 9 %}
+                                            <span id="tm_{{ col }}"></span>
+                                        {% elif row == 20 %}
+                                            <span id="tc_{{ col }}"></span>
+                                        {% else %}
+                                            <select name="entry_{{ row }}_{{ col }}">
+                                                <option value="" disabled selected></option>
+                                                <option value="delete">Delete</option>
+                                                {% for value in dropdown_values[row_names[row]] %}
+                                                    <option value="{{ value }}">{{ value }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        {% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                        <tr>
+                            <td>TO</td>
+                            <td colspan="4"><span id="to"></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="info-container">
+                <p>Empty cells: <span id="empty-cells-count">0</span></p>
+                <input type="text" id="fileName" placeholder="Enter file name">
+                <button type="button" onclick="saveGame()">Save Game</button>
+                <button type="button" onclick="loadGame()">Load Game</button>
+                <button type="button" class="reset-button" onclick="resetScores()">Reset Scores</button>
+            </div>
+        </div>
+        <div class="theme-selector-container">
+            <label for="theme-selector">Select Theme:</label>
+            <select id="theme-selector" onchange="changeTheme()">
+                <option value="default">Default</option>
+                <option value="dark">Dark</option>
+                <option value="pastel">Pastel</option>
+                <option value="high-contrast">High Contrast</option>
+                <option value="ocean">Ocean</option>
+                <option value="forest">Forest</option>
+                <option value="sunset">Sunset</option>
+                <option value="desert">Desert</option>
+                <option value="winter">Winter</option>
+                <option value="spring">Spring</option>
+                <option value="summer">Summer</option>
+                <option value="autumn">Autumn</option>
+                <option value="vintage">Vintage</option>
+                <option value="modern">Modern</option>
+                <option value="neon">Neon</option>
+                <option value="classic">Classic</option>
+                <option value="space">Space</option>
+                <option value="earth">Earth</option>
+                <option value="floral">Floral</option>
+                <option value="monochrome">Monochrome</option>
+            </select>
+        </div>
+    </form>
+</body>
+</html>
